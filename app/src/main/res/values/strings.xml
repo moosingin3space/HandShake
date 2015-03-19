@@ -1,6 +1,8 @@
 <resources>
-    <string name="app_name">HandShake</string>
+    <string name="app_name">ZipSwitch</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="title_activity_sign_up">SignUpActivity</string>
+    <string name="title_activity_watch_monitor">ZipSwitch</string>
 </resources>

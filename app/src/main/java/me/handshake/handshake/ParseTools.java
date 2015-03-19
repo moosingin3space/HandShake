@@ -14,40 +14,42 @@ import com.parse.SignUpCallback;
 public final class ParseTools {
     private ParseTools() {}
 
-    public static void newUser(String email, String password, String github, String linkedin, SignUpCallback cb) {
+    public static void newUser(String name, String email, String password, String github, String linkedin, SignUpCallback cb) {
         ParseUser user = new ParseUser();
         user.setUsername(email);
         user.setEmail(email);
         user.setPassword(password);
+        user.put("name", name);
         user.put("github", github);
         user.put("linkedin", linkedin);
         user.signUpInBackground(cb);
     }
 
-    public static void postHandshake(long timestamp, int compass) {
+    public static void postHandshake(long timestamp, int compass) throws ParseException {
         ParseObject handshake = new ParseObject("Handshake");
         handshake.put("timestamp", timestamp);
         handshake.put("compass", compass);
-        handshake.put("user", ParseUser.getCurrentUser());
-        handshake.saveInBackground();
+        handshake.put("userId", ParseUser.getCurrentUser().getObjectId());
+        handshake.save();
     }
 
     public static void findOtherHandshakes(final long timestamp, final int compass, final FindHandshakeCallback callback) {
         final ParseQuery<ParseObject> handshakeQuery = ParseQuery.getQuery("Handshake");
-        final long timestampLow = timestamp - 3;
-        final long timestampHigh = timestamp + 3;
-        int compassOpposite;
+        final long timestampLow = timestamp - 5;
+        final long timestampHigh = timestamp + 5;
+        /*int compassOpposite;
         if (compass < 180) {
             compassOpposite = compass + 180;
         } else {
             compassOpposite = compass - 180;
         }
         final int compassLow = compassOpposite - 15;
-        final int compassHigh = compassOpposite + 15;
+        final int compassHigh = compassOpposite + 15;*/
         handshakeQuery.whereGreaterThan("timestamp", timestampLow);
         handshakeQuery.whereLessThan("timestamp", timestampHigh);
-        handshakeQuery.whereGreaterThan("compass", compassLow);
-        handshakeQuery.whereLessThan("compass", compassHigh);
+        handshakeQuery.whereNotEqualTo("userId", ParseUser.getCurrentUser().getObjectId());
+        /*handshakeQuery.whereGreaterThan("compass", compassLow);
+        handshakeQuery.whereLessThan("compass", compassHigh);*/
         handshakeQuery.getFirstInBackground(new GetCallback<ParseObject>() {
             @Override
             public void done(ParseObject obj, ParseException e) {
@@ -56,8 +58,21 @@ public final class ParseTools {
                     LogTools.debug("no handshake found");
                 } else {
                     LogTools.debug("got handshake");
-                    final ParseUser u = (ParseUser) obj.get("user");
-                    callback.done(u);
+                    final String userId = (String) obj.get("userId");
+                    final ParseQuery<ParseUser> userQuery = ParseUser.getQuery();
+                    userQuery.whereEqualTo("objectId", userId);
+                    userQuery.getFirstInBackground(new GetCallback<ParseUser>() {
+                        @Override
+                        public void done(ParseUser user, ParseException e) {
+                            if (user == null) {
+                                // no user
+                                LogTools.debug("no user found");
+                            } else {
+                                LogTools.debug("got user");
+                                callback.done(user);
+                            }
+                        }
+                    });
                 }
             }
         });

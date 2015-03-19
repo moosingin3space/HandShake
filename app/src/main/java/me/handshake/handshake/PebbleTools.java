@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
+import com.parse.ParseException;
 
 import java.util.UUID;
 
@@ -27,7 +28,15 @@ public final class PebbleTools {
                 long timestamp = data.getInteger(KEY_TIMESTAMP);
                 int compass = data.getInteger(KEY_COMPASS).intValue();
 
-                ParseTools.postHandshake(timestamp, compass);
+                try {
+                    ParseTools.postHandshake(timestamp, compass);
+                    Thread.sleep(5000);
+                    LogTools.debug("posting handshake success");
+                } catch (ParseException e) {
+                    LogTools.error("posting handshake failed " + e);
+                } catch (InterruptedException e) {
+                    // never will happen
+                }
                 ParseTools.findOtherHandshakes(timestamp, compass, callback);
             }
         });
